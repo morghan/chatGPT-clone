@@ -9,6 +9,7 @@ streamlit-chat = "*"
 python-dotenv = "*"
 langchain = "*"
 openai = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
