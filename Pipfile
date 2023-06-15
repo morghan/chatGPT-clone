@@ -10,6 +10,9 @@ python-dotenv = "*"
 langchain = "*"
 openai = "*"
 psycopg2 = "*"
+redis = "*"
+pypdf2 = "*"
+tiktoken = "*"
 
 [dev-packages]
 

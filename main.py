@@ -2,12 +2,18 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 
+from PyPDF2 import PdfReader
 import streamlit as st
 from streamlit_chat import message
 
 from langchain.chat_models import ChatOpenAI
+from langchain.chains.question_answering import load_qa_chain
 from langchain.schema import SystemMessage, AIMessage, HumanMessage
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores.redis import Redis
 from langchain.callbacks import get_openai_callback
+
 
 st.set_page_config(page_title="ChatGPT Clone", page_icon="💬")
 
@@ -73,9 +79,19 @@ def upload_file(file_content):
 def main():
     init()
     chat = ChatOpenAI(temperature=0.2)
+    qa_chain = load_qa_chain(llm=chat, chain_type="stuff")
+
     system_prompt = fetch_system_prompt()
     # st.write("system_prompt", system_prompt)
+    embeddings = OpenAIEmbeddings()
+    vector_store = Redis.from_existing_index(
+        embeddings,
+        redis_url=st.secrets["redis"]["url"],
+        index_name="pdfs",
+    )
+
     with st.sidebar:
+        # System Message upload
         uploaded_file = st.file_uploader(
             "Upload your system prompt from .txt file", type=["txt"]
         )
@@ -87,6 +103,22 @@ def main():
             system_prompt = fetch_system_prompt()
             if "chat_history" in st.session_state:
                 del st.session_state["chat_history"]
+
+        # PDF file upload
+        pdf = st.file_uploader("Upload your PDF", type=["pdf"])
+        if pdf is not None:
+            st.write("PDF file uploaded successfully✅")
+            pdf_reader = PdfReader(pdf)
+
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, chunk_overlap=200, length_function=len
+            )
+            chunks = text_splitter.split_text(text=text)
+            vector_store.add_texts(chunks)
 
         print("system_prompt", system_prompt)
         # st.write("system_prompt", system_prompt)
@@ -106,6 +138,10 @@ def main():
         user_input = st.text_input("Your input", key="user_input")
 
     if user_input:
+        if vector_store is not None:
+            relevant_docs = vector_store.similarity_search(user_input)
+            if len(relevant_docs) > 0:
+                st.write(len(relevant_docs))
         st.session_state["chat_history"].append(HumanMessage(content=user_input))
 
         with get_openai_callback() as callback, st.spinner("Thinking..."):
@@ -114,7 +150,7 @@ def main():
 
         st.session_state["chat_history"].append(AIMessage(content=ai_response.content))
 
-    display_chat_history()
+        display_chat_history()
 
 
 if __name__ == "__main__":
