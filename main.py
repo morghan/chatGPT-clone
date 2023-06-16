@@ -8,17 +8,17 @@ import streamlit as st
 from streamlit_chat import message
 
 from langchain.chat_models import ChatOpenAI
-from langchain.chains.question_answering import load_qa_chain
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
-from langchain.schema import SystemMessage, AIMessage, HumanMessage
+from langchain.chains import ConversationalRetrievalChain
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Pinecone, Redis
+from langchain.vectorstores import Pinecone
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain.callbacks import get_openai_callback
 
 st.set_page_config(page_title="ChatGPT Clone", page_icon="💬")
+if "something" not in st.session_state:
+  st.session_state["something"] = ""
 
 
 @st.cache_data
@@ -77,13 +77,12 @@ def fetch_system_prompt():
 
 def display_chat_history():
     if "chat_history" not in st.session_state:
+        st.session_state["chat_reset"] = False
         return
+    if st.session_state["chat_reset"]:
+        st.session_state["chat_reset"] = False
+
     chat_history = st.session_state["chat_history"]
-    # for index, msg in enumerate(chat_history[1:]):
-    #     if index % 2 == 0:
-    #         message(msg.content, is_user=True, key=f"msg_{index}_user")
-    #     else:
-    #         message(msg.content, is_user=False, key=f"msg_{index}_ai")
     for index, tup in enumerate(chat_history):
         message(tup[0], is_user=True, key=f"msg_{index}_user")
         message(tup[1], is_user=False, key=f"msg_{index}_ai")
@@ -122,11 +121,16 @@ def create_qa_chain(template_prompt, chat_model, memory, vector_store):
         )
     return qa_chain
 
+def submit():
+    st.session_state["something"] = st.session_state["user_input"]
+    st.session_state["user_input"] = ""
 
 def main():
+
     init()
+
     chat_model = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0.2)
-    # qa_chain = load_qa_chain(llm=chat_model, chain_type="stuff")
+
     memory = ConversationBufferMemory(
         memory_key="chat_history", return_messages=True, output_key="answer"
     )
@@ -137,65 +141,76 @@ def main():
 
     with st.sidebar:
         # System Message upload
-        uploaded_file = st.file_uploader(
-            "You can customize the system prompt by uploading a .txt file. This prompt will be saved for future sessions",
-            type=["txt"],
-        )
-        if uploaded_file is not None:
-            st.write("file uploaded successfully✅")
-            st.write("Here is the content of your file:")
-            file_content = uploaded_file.getvalue().decode("utf-8")
-            upload_file(file_content)
-            template = fetch_system_prompt()
-            qa_chain = create_qa_chain(template, chat_model, memory, vector_store)
-            if "chat_history" in st.session_state:
-                del st.session_state["chat_history"]
+        with st.form("system_prompt", clear_on_submit=True):
+          uploaded_file = st.file_uploader(
+              "You can customize the system prompt by uploading a .txt file. This prompt will be saved for future sessions",
+              type=["txt"],
+          )
+          submitted1 = st.form_submit_button("Submit")
+          if submitted1 and uploaded_file is not None:
+              with st.spinner("Uploading and processing prompt 🚧 ..."):
+                file_content = uploaded_file.getvalue().decode("utf-8")
+                upload_file(file_content)
+                template = fetch_system_prompt()
+                qa_chain = create_qa_chain(template, chat_model, memory, vector_store)
+                st.session_state["chat_reset"] = True
+                if "chat_history" in st.session_state:
+                  del st.session_state["chat_history"]
+              
 
         # PDF file upload and storage in vector store
-        pdf = st.file_uploader(
-            "Upload your PDF. It may take some time, but it will be saved for future sessions",
-            type=["pdf"],
-        )
-        if pdf is not None:
-            pdf_reader = PdfReader(pdf)
-            st.write("PDF file uploaded successfully✅")
-
-            text = ""
-            for page in pdf_reader.pages:
-                text += page.extract_text()
-
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000, chunk_overlap=200, length_function=len
+        with st.form("pdf_upload", clear_on_submit=True):
+            pdf = st.file_uploader(
+                "Upload your PDF. It may take some time, but it will be saved for future sessions",
+                type=["pdf"],
             )
-            chunks = text_splitter.split_text(text=text)
-            st.write("chunks length", len(chunks))
+            submitted = st.form_submit_button("Submit")
+        if submitted and pdf is not None:
+            pdf_reader = PdfReader(pdf)
+            st.success("✅ PDF file uploaded successfully")
+
+            with st.spinner("Processing text 🚧 ..."):
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=1000, chunk_overlap=200, length_function=len
+                )
+                chunks = text_splitter.split_text(text=text)
+            st.success(f"✅ Text processed: {len(chunks)}")
             if vector_store is not None:
-                with st.spinner("adding text to vector store"):
+                with st.spinner("Adding text to vector store 🗄️ ..."):
                     try:
                         ids = vector_store.add_texts(texts=chunks, namespace="fdd")
-                        st.write("text added successfully✅", "ids:", ids)
+                        st.success(f"✅ Text added successfully:")
+                        st.write(ids)
+                        # st.success("✅ Text added successfully")
+                        st.session_state["chat_reset"] = True
                     except Exception as e:
                         st.write("Error:", e)
 
-        if "chat_history" not in st.session_state:
-            st.session_state["chat_history"] = []
+        st.text_input("Your input", key="user_input", on_change=submit)
 
-        user_input = st.text_input("Your input", key="user_input")
+    if uploaded_file is not None:
+            st.success("File uploaded successfully. Here is your system prompt:",icon="📝")
+            st.code(uploaded_file.getvalue().decode("utf-8"), language="None")
 
-    if user_input:
+    if st.session_state["something"] != "" and not st.session_state["chat_reset"]:
         with get_openai_callback() as callback, st.spinner("Thinking..."):
             ai_response = qa_chain(
                 {
-                    "question": user_input,
+                    "question": st.session_state["something"],
                 }
             )
             print(callback)
 
-        # st.session_state["chat_history"].append(AIMessage(content=ai_response.content))
-        st.session_state["chat_history"].append((user_input, ai_response["answer"]))
+        if "chat_history" not in st.session_state:
+          st.session_state["chat_history"] = []
 
-        display_chat_history()
-
+        st.session_state["chat_history"].append((st.session_state["something"], ai_response["answer"]))
+    
+    display_chat_history()
 
 if __name__ == "__main__":
     main()
