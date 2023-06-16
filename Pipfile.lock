@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "829e7a114c5abb88804b8c09b0950ab370719ca854c363d47c1cf9a5cf50592e"
+            "sha256": "650279e81d080c78b08e3d197ae9dcffda87894c7c07a9d81a88c10cc5157e09"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -293,6 +293,14 @@
             "markers": "python_version >= '3.5'",
             "version": "==5.1.1"
         },
+        "dnspython": {
+            "hashes": [
+                "sha256:224e32b03eb46be70e12ef6d64e0be123a64e621ab4c0822ff6d450d52a540b9",
+                "sha256:89141536394f909066cabd112e3e1a37e4e654db00a25308b0f130bc3152eb46"
+            ],
+            "markers": "python_version >= '3.7' and python_version < '4.0'",
+            "version": "==2.3.0"
+        },
         "frozenlist": {
             "hashes": [
                 "sha256:008a054b75d77c995ea26629ab3a0c0d7281341f2fa7e1e85fa6153ae29ae99c",
@@ -497,11 +505,11 @@
         },
         "langchain": {
             "hashes": [
-                "sha256:2cc55b49dd20ad254d78223aaf9943ba21be7313fbc13e63d0cc29a7026b2992",
-                "sha256:706d9697a1a9c75799b161ae2b85f5205ae64700b844f5713a7e18926e47397d"
+                "sha256:25f61952afe6c47e9eb4be8d6f23edf14a7a2dfa0ab74512f809a49bf34ef8e4",
+                "sha256:63ef3dba8df4326579aea30e8a209d8cb6cd199b8bd91f4eaf470c3f79ed5a57"
             ],
             "index": "pypi",
-            "version": "==0.0.201"
+            "version": "==0.0.202"
         },
         "langchainplus-sdk": {
             "hashes": [
@@ -510,6 +518,14 @@
             ],
             "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
             "version": "==0.0.10"
+        },
+        "loguru": {
+            "hashes": [
+                "sha256:1612053ced6ae84d7959dd7d5e431a0532642237ec21f7fd83ac73fe539e03e1",
+                "sha256:b93aa30099fa6860d4727f1b81f8718e965bb96253fa190fab2077aaad6d15d3"
+            ],
+            "markers": "python_version >= '3.5'",
+            "version": "==0.7.0"
         },
         "markdown-it-py": {
             "hashes": [
@@ -882,6 +898,14 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==9.5.0"
+        },
+        "pinecone-client": {
+            "hashes": [
+                "sha256:21fddb752668efee4d3c6b706346d9580e36a8b06b8d97afd60bd33ef2536e7e",
+                "sha256:391fe413754efd4e0ef00154b44271d63c4cdd4bedf088d23111a5725d863210"
+            ],
+            "index": "pypi",
+            "version": "==2.2.2"
         },
         "pkgutil-resolve-name": {
             "hashes": [
@@ -1430,7 +1454,7 @@
                 "sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26",
                 "sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5"
             ],
-            "markers": "python_version < '3.10'",
+            "markers": "python_version >= '3.7'",
             "version": "==4.6.3"
         },
         "typing-inspect": {

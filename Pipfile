@@ -13,6 +13,7 @@ psycopg2 = "*"
 redis = "*"
 pypdf2 = "*"
 tiktoken = "*"
+pinecone-client = "*"
 
 [dev-packages]
 
