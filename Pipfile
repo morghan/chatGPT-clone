@@ -14,9 +14,10 @@ pypdf2 = "*"
 tiktoken = "*"
 pinecone-client = "*"
 psycopg2-binary = "*"
+colorama = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.8"
-python_full_version = "3.8.17"
+python_full_version = "3.8.10"
