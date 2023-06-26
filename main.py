@@ -6,10 +6,14 @@ from langchain.callbacks import get_openai_callback
 
 from connections import vector_store, fetch_system_prompt, upload_prompt
 from stream_handlers import init, display_chat_history, submit
-from langchain_handlers import chat_model, memory, create_qa_chain
+from langchain_handlers import create_qa_chain
+
+template = fetch_system_prompt()
+
+qa_chain = create_qa_chain(template)
 
 
-def main():
+def main(qa_chain=qa_chain):
     if "something" not in st.session_state:
         st.session_state["something"] = ""
     with st.sidebar:
@@ -25,9 +29,7 @@ def main():
                     file_content = uploaded_file.getvalue().decode("utf-8")
                     upload_prompt(file_content)
                     template = fetch_system_prompt()
-                    qa_chain = create_qa_chain(
-                        template, chat_model, memory, vector_store
-                    )
+                    qa_chain = create_qa_chain(template)
                     st.session_state["chat_reset"] = True
                     if "chat_history" in st.session_state:
                         del st.session_state["chat_history"]
@@ -91,8 +93,4 @@ def main():
 
 if __name__ == "__main__":
     init()
-
-    template = fetch_system_prompt()
-
-    qa_chain = create_qa_chain(template, chat_model, memory, vector_store)
     main()

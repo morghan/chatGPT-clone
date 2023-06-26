@@ -2,6 +2,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
+from connections import vector_store
 import streamlit as st
 
 
@@ -19,7 +20,10 @@ def load_llm_and_memory():
 chat_model, memory = load_llm_and_memory()
 
 
-def create_qa_chain(template_prompt, chat_model, memory, vector_store):
+def create_qa_chain(
+    template_prompt, chat_model=chat_model, memory=memory, vector_store=vector_store
+):
+    print("Creating QA chain")
     if "context" in template_prompt[0][2] and "question" in template_prompt[0][2]:
         system_prompt = PromptTemplate.from_template(template=template_prompt[0][2])
         qa_chain = ConversationalRetrievalChain.from_llm(
