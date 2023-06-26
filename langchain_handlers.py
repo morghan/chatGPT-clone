@@ -24,22 +24,20 @@ def create_qa_chain(
     template_prompt, chat_model=chat_model, memory=memory, vector_store=vector_store
 ):
     print("Creating QA chain")
-    if "context" in template_prompt[0][2] and "question" in template_prompt[0][2]:
-        system_prompt = PromptTemplate.from_template(template=template_prompt[0][2])
-        qa_chain = ConversationalRetrievalChain.from_llm(
-            llm=chat_model,
-            memory=memory,
-            combine_docs_chain_kwargs={"prompt": system_prompt},
-            retriever=vector_store.as_retriever(search_kwargs={"k": 2}),
-            chain_type="stuff",
-            verbose=True,
-        )
-    else:
-        qa_chain = ConversationalRetrievalChain.from_llm(
-            llm=chat_model,
-            memory=memory,
-            retriever=vector_store.as_retriever(search_kwargs={"k": 2}),
-            chain_type="stuff",
-            verbose=True,
-        )
+    with open("files/system-prompt.txt", "r") as file:
+        sysprompt_content = file.read()
+
+    template_prompt_content = template_prompt[0][2]
+    full_prompt_content = template_prompt_content + "\n\n" + sysprompt_content
+
+    system_prompt = PromptTemplate.from_template(template=full_prompt_content)
+    qa_chain = ConversationalRetrievalChain.from_llm(
+        llm=chat_model,
+        memory=memory,
+        combine_docs_chain_kwargs={"prompt": system_prompt},
+        retriever=vector_store.as_retriever(search_kwargs={"k": 2}),
+        chain_type="stuff",
+        verbose=True,
+    )
+
     return qa_chain

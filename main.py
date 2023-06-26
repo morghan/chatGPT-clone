@@ -70,7 +70,7 @@ def main(qa_chain=qa_chain):
 
     if uploaded_file is not None:
         st.success("File uploaded successfully. Here is your system prompt:", icon="📝")
-        st.code(uploaded_file.getvalue().decode("utf-8"), language="None")
+        # st.code(uploaded_file.getvalue().decode("utf-8"), language="None")
 
     if st.session_state["something"] != "" and not st.session_state["chat_reset"]:
         with get_openai_callback() as callback, st.spinner("Thinking..."):

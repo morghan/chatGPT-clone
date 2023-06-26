@@ -62,7 +62,7 @@ def upload_prompt(file_content):
     with db_connection.cursor() as cur2:
         sql = "SELECT * FROM insert_update_prompt(%s);"
         try:
-            cur2.execute(sql, (file_content,))
+            cur2.execute(sql, (file_content.strip(),))
             db_connection.commit()
         except Exception as e:
             print("Error:", e)
