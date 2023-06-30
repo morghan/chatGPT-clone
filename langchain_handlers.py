@@ -34,7 +34,7 @@ def create_qa_chain(
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=chat_model,
         memory=memory,
-        combine_docs_chain_kwargs={"prompt": system_prompt},
+        # combine_docs_chain_kwargs={"prompt": system_prompt},
         retriever=vector_store.as_retriever(search_kwargs={"k": 2}),
         chain_type="stuff",
         verbose=True,

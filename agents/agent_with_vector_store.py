@@ -18,7 +18,7 @@ pinecone.init(
     api_key=st.secrets["pinecone"]["api_key"],
     environment=st.secrets["pinecone"]["env"],
 )
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(temperature=0)
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 
@@ -70,7 +70,7 @@ def get_qa_chains():
             RetrievalQA.from_chain_type(
                 llm=llm,
                 chain_type="stuff",
-                retriever=vectors.as_retriever(search_kwargs={"k": 2}),
+                retriever=vectors.as_retriever(),
             )
         )
 
@@ -98,10 +98,33 @@ tools = [
 agent = initialize_agent(
     tools,
     llm,
-    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
     memory=memory,
 )
+# print(agent.agent.llm_chain.prompt.template)
+# agent_template = """Answer the following questions as best you can. You have access to the following tools:
+
+# Cookie Cutters QA System: Useful for when you need to answer questions about the Cookie Cutters franchise. Input should be a fully formed question.
+# Five Star Bath Solutions QA System: Useful for when you need to answer questions about the Five Star Bath Solutions franchise. Input should be a fully formed question.
+
+# Use the following format:
+
+# Question: the input question you must answer
+# Thought: you should always think about what to do
+# Action: the action to take, can be one of [Cookie Cutters QA System, Five Star Bath Solutions QA System]. If no tool is applicable, answer helpfully but do not make up answers
+# If you don't know the answer simply answer that you don't the answer
+# Action Input: the input to the action
+# Observation: the result of the action
+# ... (this Thought/Action/Action Input/Observation can repeat N times)
+# Thought: I now know the final answer
+# Final Answer: the final answer to the original input question
+
+# Begin!
+
+# Question: {input}
+# Thought:{agent_scratchpad}"""
+# agent.agent.llm_chain.prompt.template = agent_template
 while True:
     query = input("💬 To exit type 'q', else Enter a query for GPT: ")
     if query == "q":
