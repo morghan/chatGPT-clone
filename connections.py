@@ -8,6 +8,12 @@ from langchain.vectorstores import Pinecone
 # This must be the first streamlit command called, otherwise it won't work
 st.set_page_config(page_title="ChatGPT Clone", page_icon="💬")
 
+# Connect to pinecone kb
+pinecone.init(
+    api_key=st.secrets["pinecone"]["api_key"],
+    environment=st.secrets["pinecone"]["env"],
+)
+
 
 # These are functions streamlit runs when it starts
 # But then not run again because it is cached
@@ -26,10 +32,6 @@ def load_vector_store():
     try:
         print("loading vector store...")
         embeddings = OpenAIEmbeddings()
-        pinecone.init(
-            api_key=st.secrets["pinecone"]["api_key"],
-            environment=st.secrets["pinecone"]["env"],
-        )
         vectors = Pinecone.from_existing_index(
             index_name=st.secrets["pinecone"]["index_name"],
             embedding=embeddings,
@@ -67,3 +69,15 @@ def upload_prompt(file_content):
         except Exception as e:
             print("Error:", e)
             db_connection.rollback()
+
+
+def fetch_namespaces():
+    # List all indexes in your Pinecone account
+    active_indexes = pinecone.list_indexes()
+
+    # Get namespaces for index called pdf-kb which is the only index at the moment
+    pinecone_index = pinecone.Index(active_indexes[0])
+    index_description = pinecone_index.describe_index_stats()
+    namespaces = index_description.get("namespaces")
+
+    return list(namespaces)
