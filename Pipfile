@@ -16,6 +16,7 @@ pinecone-client = "*"
 psycopg2-binary = "*"
 colorama = "*"
 google-search-results = "*"
+streamlit-tree-select = "*"
 
 [dev-packages]
 

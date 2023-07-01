@@ -13,6 +13,11 @@ pinecone.init(
     api_key=st.secrets["pinecone"]["api_key"],
     environment=st.secrets["pinecone"]["env"],
 )
+# List all indexes in your Pinecone account
+active_indexes = pinecone.list_indexes()
+
+# Get namespaces for index called pdf-kb which is the only index at the moment
+pinecone_index = pinecone.Index(active_indexes[0])
 
 
 # These are functions streamlit runs when it starts
@@ -72,12 +77,12 @@ def upload_prompt(file_content):
 
 
 def fetch_namespaces():
-    # List all indexes in your Pinecone account
-    active_indexes = pinecone.list_indexes()
-
-    # Get namespaces for index called pdf-kb which is the only index at the moment
-    pinecone_index = pinecone.Index(active_indexes[0])
     index_description = pinecone_index.describe_index_stats()
     namespaces = index_description.get("namespaces")
 
     return list(namespaces)
+
+
+def delete_namespaces(namespaces):
+    for np in namespaces:
+        pinecone_index.delete(delete_all=True, namespace=np)
