@@ -84,5 +84,10 @@ def fetch_namespaces():
 
 
 def delete_namespaces(namespaces):
-    for np in namespaces:
-        pinecone_index.delete(delete_all=True, namespace=np)
+    try:
+        for np in namespaces:
+            pinecone_index.delete(delete_all=True, namespace=np)
+        return True
+    except Exception as e:
+        print("Error:", e)
+        return False

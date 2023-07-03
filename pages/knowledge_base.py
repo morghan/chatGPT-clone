@@ -1,6 +1,8 @@
 import streamlit as st
 import time
 from streamlit_tree_select import tree_select
+from streamlit_modal import Modal
+import streamlit.components.v1 as components
 from connections import fetch_namespaces, delete_namespaces
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -17,13 +19,16 @@ def build_directory():
 
 
 def delete_resources():
-    delete_namespaces(st.session_state["directory_data"]["checked"])
-    build_directory()
+    result = delete_namespaces(st.session_state["directory_data"]["checked"])
+    if result:
+        build_directory()
+    return result
 
 
 st.title("🗄️ Remote knowledge base")
 if "namespaces" not in st.session_state and "directory" not in st.session_state:
     build_directory()
+
 
 if "directory_data" not in st.session_state:
     st.session_state["directory_data"] = {}
@@ -85,7 +90,39 @@ with st.form("pdf_upload2", clear_on_submit=True):
 st.subheader("Select your resources")
 st.session_state["directory_data"] = tree_select(st.session_state["directory"])
 
-
 st.write(st.session_state["directory_data"])
-if st.button("Delete resources", on_click=delete_resources):
-    st.success("Deleted!")
+
+modal = Modal("Confirm to Delete Resources", key="ModKey")
+
+if len(st.session_state["directory_data"]["checked"]) > 0:
+    disable_modal = False
+
+else:
+    disable_modal = True
+
+open_modal = st.button("Delete Resources", disabled=disable_modal)
+if open_modal:
+    modal.open()
+
+resources_list = st.session_state["directory_data"]["checked"]
+string_list = ", ".join(resources_list)
+
+
+if modal.is_open():
+    with modal.container():
+        st.write("*Are you sure you wish to delete the resources selected?*")
+        st.write(string_list)
+
+        col1, col2 = st.columns([0.3, 0.7])
+        with col1:
+            if st.button("Yes"):
+                if delete_resources() == True:
+                    st.success("Resources successfully deleted!")
+                    time.sleep(2)
+                    modal.close()
+                else:
+                    st.error("Error: Unable to delete resources.")
+
+        with col2:
+            if st.button("No"):
+                modal.close()

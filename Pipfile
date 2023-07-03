@@ -16,6 +16,7 @@ psycopg2-binary = "*"
 colorama = "*"
 google-search-results = "*"
 streamlit-tree-select = "*"
+streamlit-modal = "*"
 
 [dev-packages]
 
