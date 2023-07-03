@@ -2,7 +2,6 @@ import streamlit as st
 import time
 from streamlit_tree_select import tree_select
 from streamlit_modal import Modal
-import streamlit.components.v1 as components
 from connections import fetch_namespaces, delete_namespaces
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -25,10 +24,17 @@ def delete_resources():
     return result
 
 
+def check_directory():
+    if len(st.session_state["directory_data"]["checked"]) > 0:
+        resources_to_delete = ", ".join(st.session_state["directory_data"]["checked"])
+        return False, resources_to_delete
+    else:
+        return True, None
+
+
 st.title("🗄️ Remote knowledge base")
 if "namespaces" not in st.session_state and "directory" not in st.session_state:
     build_directory()
-
 
 if "directory_data" not in st.session_state:
     st.session_state["directory_data"] = {}
@@ -90,28 +96,19 @@ with st.form("pdf_upload2", clear_on_submit=True):
 st.subheader("Select your resources")
 st.session_state["directory_data"] = tree_select(st.session_state["directory"])
 
-st.write(st.session_state["directory_data"])
 
 modal = Modal("Confirm to Delete Resources", key="ModKey")
 
-if len(st.session_state["directory_data"]["checked"]) > 0:
-    disable_modal = False
-
-else:
-    disable_modal = True
+disable_modal, resources_to_delete = check_directory()
 
 open_modal = st.button("Delete Resources", disabled=disable_modal)
 if open_modal:
     modal.open()
 
-resources_list = st.session_state["directory_data"]["checked"]
-string_list = ", ".join(resources_list)
-
-
 if modal.is_open():
     with modal.container():
         st.write("*Are you sure you wish to delete the resources selected?*")
-        st.write(string_list)
+        st.write(resources_to_delete)
 
         col1, col2 = st.columns([0.3, 0.7])
         with col1:

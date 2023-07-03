@@ -1,7 +1,6 @@
 from PyPDF2 import PdfReader
 import streamlit as st
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.callbacks import get_openai_callback
 
 from connections import vector_store, fetch_system_prompt, upload_prompt
@@ -33,38 +32,6 @@ def main(qa_chain=qa_chain):
                     st.session_state["chat_reset"] = True
                     if "chat_history" in st.session_state:
                         del st.session_state["chat_history"]
-
-        # PDF file upload and storage in vector store
-        with st.form("pdf_upload", clear_on_submit=True):
-            pdf = st.file_uploader(
-                "Upload your PDF. It may take some time, but it will be saved for future sessions",
-                type=["pdf"],
-            )
-            submitted = st.form_submit_button("Submit")
-        if submitted and pdf is not None:
-            pdf_reader = PdfReader(pdf)
-            st.success("✅ PDF file uploaded successfully")
-
-            with st.spinner("Processing text 🚧 ..."):
-                text = ""
-                for page in pdf_reader.pages:
-                    text += page.extract_text()
-
-                text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=1000, chunk_overlap=200, length_function=len
-                )
-                chunks = text_splitter.split_text(text=text)
-            st.success(f"✅ Text processed: {len(chunks)}")
-            if vector_store is not None:
-                with st.spinner("Adding text to vector store 🗄️ ..."):
-                    try:
-                        ids = vector_store.add_texts(texts=chunks, namespace="fdd")
-                        st.success(f"✅ Text added successfully:")
-                        st.write(ids)
-                        # st.success("✅ Text added successfully")
-                        st.session_state["chat_reset"] = True
-                    except Exception as e:
-                        st.write("Error:", e)
 
         st.text_input("Your input", key="user_input", on_change=submit)
 
