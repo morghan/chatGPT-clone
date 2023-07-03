@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a93e999ca9e94d00bd6afe2d3ef3028737706f3e5ce9823a0a3c698ffe43dbe1"
+            "sha256": "45090b86383c026d1725b02645359c356997e49ec492c233ea440430e0afbed2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -520,11 +520,11 @@
         },
         "langchain": {
             "hashes": [
-                "sha256:2686633cb7734200f8cf7b287a0e95b747e29d6b1570826b6555749911b2a262",
-                "sha256:fcba303c0744f74a026eda97d65da51a90cd5b20ab1944ad766d95ee1eb68b75"
+                "sha256:38a7696425154080b5f9d2ab55eaf4b00b20095edb2847ab988ed33e2eb9b5f7",
+                "sha256:9587e9b6f4adfa21068c89d460912219d44213258196b1abfee0ced012017306"
             ],
             "index": "pypi",
-            "version": "==0.0.220"
+            "version": "==0.0.222"
         },
         "langchainplus-sdk": {
             "hashes": [
@@ -1232,14 +1232,6 @@
             "markers": "python_version >= '3.6'",
             "version": "==6.0"
         },
-        "redis": {
-            "hashes": [
-                "sha256:585dc516b9eb042a619ef0a39c3d7d55fe81bdb4df09a52c9cdde0d07bf1aa7d",
-                "sha256:e2b03db868160ee4591de3cb90d40ebb50a90dd302138775937f6a42b7ed183c"
-            ],
-            "index": "pypi",
-            "version": "==4.6.0"
-        },
         "regex": {
             "hashes": [
                 "sha256:0385e73da22363778ef2324950e08b689abdf0b108a7d8decb403ad7f5191938",
@@ -1523,11 +1515,11 @@
         },
         "typing-extensions": {
             "hashes": [
-                "sha256:5d8c9dac95c27d20df12fb1d97b9793ab8b2af8a3a525e68c80e21060c161771",
-                "sha256:935ccf31549830cda708b42289d44b6f74084d616a00be651601a4f968e77c82"
+                "sha256:440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36",
+                "sha256:b75ddc264f0ba5615db7ba217daeb99701ad295353c45f9e95963337ceeeffb2"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==4.7.0"
+            "version": "==4.7.1"
         },
         "typing-inspect": {
             "hashes": [

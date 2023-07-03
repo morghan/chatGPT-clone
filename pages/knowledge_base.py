@@ -45,7 +45,7 @@ with st.form("pdf_upload2", clear_on_submit=True):
 
     if submitted and franchise_name is not None:
         if (
-            franchise_name.isalpha()
+            all(part.isalpha() for part in franchise_name.split(sep=" "))
             and franchise_name not in st.session_state["namespaces"]
         ):
             if pdf is not None:
