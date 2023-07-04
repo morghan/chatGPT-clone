@@ -37,12 +37,11 @@ def load_vector_store():
     try:
         print("loading vector store...")
         embeddings = OpenAIEmbeddings()
-        vectors = Pinecone.from_existing_index(
-            index_name=st.secrets["pinecone"]["index_name"],
+        vector_store = Pinecone.from_existing_index(
             embedding=embeddings,
-            namespace=st.secrets["pinecone"]["namespace"],
+            index_name=st.secrets["pinecone"]["index_name"],
         )
-        return vectors
+        return vector_store
     except Exception as e:
         print("Error=>", e)
         return None

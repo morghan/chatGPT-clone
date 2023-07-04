@@ -2,7 +2,7 @@ import streamlit as st
 import time
 from streamlit_tree_select import tree_select
 from streamlit_modal import Modal
-from connections import fetch_namespaces, delete_namespaces
+from connections import fetch_namespaces, delete_namespaces, vector_store
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
@@ -76,14 +76,20 @@ with st.form("pdf_upload2", clear_on_submit=True):
                     else:
                         st.error("Invalid PDF file. PDF file does not have text.")
                 with st.spinner("Uploading content 🚧 ..."):
+                    # vectors = vector_store.add_texts(
+                    #     texts=chunks,
+                    #     namespace=franchise_name,
+                    #     batch_size=80,
+                    # )
                     embeddings = OpenAIEmbeddings()
-                    vectors = Pinecone.from_texts(
+                    temp_vector_store = Pinecone.from_texts(
                         texts=chunks,
                         embedding=embeddings,
-                        batch_size=80,
+                        batch_size=128,
                         index_name=st.secrets["pinecone"]["index_name"],
                         namespace=franchise_name,
                     )
+
                     build_directory()
                     st.success(f"✅ File uploaded successfully!")
             else:
@@ -123,3 +129,4 @@ if modal.is_open():
         with col2:
             if st.button("No"):
                 modal.close()
+st.write(st.session_state["directory_data"])
