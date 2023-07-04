@@ -11,8 +11,12 @@ from langchain.callbacks import get_openai_callback
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 from langchain.memory import ConversationBufferMemory
+from conversation_chain import chatgpt_chain
 
-namespaces = {"cookie_cutters": "cookie-cutters", "bath_solutions": "bath-solutions"}
+namespaces = {
+    "cookie_cutters": "Cookie Cutters",
+    "bath_solutions": "Five Star Bath Solutions",
+}
 embeddings = OpenAIEmbeddings()
 pinecone.init(
     api_key=st.secrets["pinecone"]["api_key"],
@@ -58,10 +62,9 @@ def get_vectors_from_texts():
 
 
 def get_qa_chains():
-    print(namespaces.values())
     qa_chains = []
     for namespace in list(namespaces.values()):
-        vectors = Pinecone.from_existing_index(
+        vector_store = Pinecone.from_existing_index(
             index_name=st.secrets["pinecone"]["index_name"],
             embedding=embeddings,
             namespace=namespace,
@@ -70,7 +73,7 @@ def get_qa_chains():
             RetrievalQA.from_chain_type(
                 llm=llm,
                 chain_type="stuff",
-                retriever=vectors.as_retriever(),
+                retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
             )
         )
 
@@ -81,6 +84,12 @@ qa_chains = get_qa_chains()
 
 
 tools = [
+    Tool(
+        name="Conversation bot",
+        func=chatgpt_chain.run,
+        description="Useful for when the user needs to have or follow a conversation. Input can be a fully formed question or any kind of sentence. Return the output directly to the user.",
+        return_direct=True,
+    ),
     Tool(
         name="Cookie Cutters QA System",
         func=qa_chains[0].run,
@@ -100,31 +109,23 @@ agent = initialize_agent(
     llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
+    #     agent_kwargs={
+    #         "prefix": "You are an asistant whose only task is to take the user's request and decide the best tool to answer the user's request. Do not attempt to answer questions by yourself. Always use a tool. You have access to the following tools:",
+    #         "format_instructions": """Use the following format:
+    # Request: the input from the user
+    # Thought: you should always think about what to do to handle the user's input
+    # Action: the action to take, should be one of [Conversation bot, Cookie Cutters QA System, Five Star Bath Solutions QA System]
+    # Action Input: the input to the action. If the action is the Conversation bot, this should be the user's input as it is.
+    # Observation: the result of the action
+    # ... (this Thought/Action/Action Input/Observation can repeat N times)
+    # Thought: I now know the final answer
+    # Final Answer: the final answer to the original request""",
+    #     },
     memory=memory,
 )
-# print(agent.agent.llm_chain.prompt.template)
-# agent_template = """Answer the following questions as best you can. You have access to the following tools:
 
-# Cookie Cutters QA System: Useful for when you need to answer questions about the Cookie Cutters franchise. Input should be a fully formed question.
-# Five Star Bath Solutions QA System: Useful for when you need to answer questions about the Five Star Bath Solutions franchise. Input should be a fully formed question.
+print(agent.agent.llm_chain.prompt.template)
 
-# Use the following format:
-
-# Question: the input question you must answer
-# Thought: you should always think about what to do
-# Action: the action to take, can be one of [Cookie Cutters QA System, Five Star Bath Solutions QA System]. If no tool is applicable, answer helpfully but do not make up answers
-# If you don't know the answer simply answer that you don't the answer
-# Action Input: the input to the action
-# Observation: the result of the action
-# ... (this Thought/Action/Action Input/Observation can repeat N times)
-# Thought: I now know the final answer
-# Final Answer: the final answer to the original input question
-
-# Begin!
-
-# Question: {input}
-# Thought:{agent_scratchpad}"""
-# agent.agent.llm_chain.prompt.template = agent_template
 while True:
     query = input("💬 To exit type 'q', else Enter a query for GPT: ")
     if query == "q":
