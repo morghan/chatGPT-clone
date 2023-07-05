@@ -21,10 +21,10 @@ class ConversationInput(BaseModel):
     input: str = Field(description="User input to the chatbot. Must be a string.")
 
 
-class ConversationTool(BaseTool):
+class FranchiseTool(BaseTool):
     name = "run_conversational_chain"
     description = """
-        Useful for when the user needs to have or follow a conversation. 
+        Useful for when the user wants to play the franchising game. 
         Input can be a fully formed question or any kind of sentence. 
         Return the output directly to the user.
         """
@@ -39,17 +39,17 @@ class ConversationTool(BaseTool):
 
 
 tools = [
+    FranchiseTool(),
     Tool(
         name="Search",
         func=search.run,
         description="useful for when you need to answer questions about current events. You should ask targeted questions",
     ),
-    Tool(
-        name="Calculator",
-        func=llm_math_chain.run,
-        description="useful for when you need to answer questions about math",
-    ),
-    ConversationTool(),
+    # Tool(
+    #     name="Calculator",
+    #     func=llm_math_chain.run,
+    #     description="useful for when you need to answer questions about math",
+    # ),
 ]
 agent = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
 

@@ -108,7 +108,7 @@ Assistant:
 prompt = PromptTemplate(input_variables=["history", "human_input"], template=template)
 
 chatgpt_chain = LLMChain(
-    llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+    llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k"),
     prompt=prompt,
     verbose=True,
     memory=ConversationBufferWindowMemory(

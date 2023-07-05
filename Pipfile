@@ -17,6 +17,7 @@ colorama = "*"
 google-search-results = "*"
 streamlit-tree-select = "*"
 streamlit-modal = "*"
+termcolor = "*"
 
 [dev-packages]
 
