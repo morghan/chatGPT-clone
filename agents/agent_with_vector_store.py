@@ -22,8 +22,8 @@ pinecone.init(
     api_key=st.secrets["pinecone"]["api_key"],
     environment=st.secrets["pinecone"]["env"],
 )
-llm = ChatOpenAI(temperature=0)
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+# memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 
 def get_vectors_from_texts():
@@ -84,12 +84,12 @@ qa_chains = get_qa_chains()
 
 
 tools = [
-    Tool(
-        name="Conversation bot",
-        func=chatgpt_chain.run,
-        description="Useful for when the user needs to have or follow a conversation. Input can be a fully formed question or any kind of sentence. Return the output directly to the user.",
-        return_direct=True,
-    ),
+    # Tool(
+    #     name="Conversation bot",
+    #     func=chatgpt_chain.run,
+    #     description="Useful for when the user needs to have or follow a conversation. Input can be a fully formed question or any kind of sentence. Return the output directly to the user.",
+    #     return_direct=True,
+    # ),
     Tool(
         name="Cookie Cutters QA System",
         func=qa_chains[0].run,
@@ -107,7 +107,7 @@ tools = [
 agent = initialize_agent(
     tools,
     llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent=AgentType.OPENAI_FUNCTIONS,
     verbose=True,
     #     agent_kwargs={
     #         "prefix": "You are an asistant whose only task is to take the user's request and decide the best tool to answer the user's request. Do not attempt to answer questions by yourself. Always use a tool. You have access to the following tools:",
@@ -121,10 +121,7 @@ agent = initialize_agent(
     # Thought: I now know the final answer
     # Final Answer: the final answer to the original request""",
     #     },
-    memory=memory,
 )
-
-print(agent.agent.llm_chain.prompt.template)
 
 while True:
     query = input("💬 To exit type 'q', else Enter a query for GPT: ")
