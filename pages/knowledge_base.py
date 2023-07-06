@@ -21,8 +21,18 @@ def build_directory():
 
 def delete_resources():
     result = delete_namespaces(st.session_state["directory_data"]["checked"])
+
     if result:
         build_directory()
+
+        # Python List Comprehension - Remove namespaces to delete from existing QA Agent
+        updated_agent_namespaces = [
+            x
+            for x in st.session_state["agent_namespaces"]
+            if x not in set(st.session_state["directory_data"]["checked"])
+        ]
+
+        create_agent(updated_agent_namespaces)
     return result
 
 
@@ -34,8 +44,8 @@ def check_directory():
         return True, None
 
 
-def create_agent():
-    st.session_state["agent_namespaces"] = st.session_state["directory_data"]["checked"]
+def create_agent(namespaces):
+    st.session_state["agent_namespaces"] = namespaces
     try:
         st.session_state["agent"] = create_qa_agent(
             st.session_state["agent_namespaces"]
@@ -140,14 +150,17 @@ if open_delete_namespaces_modal:
 
 if delete_namespaces_modal.is_open():
     with delete_namespaces_modal.container():
-        st.write("*Are you sure you wish to delete the selected resources?*")
+        st.write("**Are you sure you wish to delete the selected resources?**")
+        st.write(
+            "*Note: If the resource is part of the QA Agent,this will also remove it from the Agent.*"
+        )
         st.write(selected_resources)
 
         col1, col2 = st.columns([0.3, 0.7])
         with col1:
             if st.button("Yes"):
                 if delete_resources() == True:
-                    st.success("Resources successfully deleted!")
+                    st.success("Resources deleted and QA Agent updated successfully!")
                     time.sleep(2)
                     delete_namespaces_modal.close()
                 else:
@@ -170,7 +183,7 @@ if create_agent_modal.is_open():
         col1, col2 = st.columns([0.3, 0.7])
         with col1:
             if st.button("Yes"):
-                if create_agent() == True:
+                if create_agent(st.session_state["directory_data"]["checked"]) == True:
                     st.success("QA Agent created!")
                     time.sleep(2)
                     create_agent_modal.close()
