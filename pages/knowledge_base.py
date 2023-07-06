@@ -2,11 +2,13 @@ import streamlit as st
 import time
 from streamlit_tree_select import tree_select
 from streamlit_modal import Modal
-from connections import fetch_namespaces, delete_namespaces, vector_store
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
+
+from connections import fetch_namespaces, delete_namespaces, vector_store
+from langchain_handlers import create_qa_agent
 
 
 def build_directory():
@@ -26,10 +28,23 @@ def delete_resources():
 
 def check_directory():
     if len(st.session_state["directory_data"]["checked"]) > 0:
-        resources_to_delete = ", ".join(st.session_state["directory_data"]["checked"])
-        return False, resources_to_delete
+        selected_resources = ", ".join(st.session_state["directory_data"]["checked"])
+        return False, selected_resources
     else:
         return True, None
+
+
+def create_agent():
+    st.session_state["agent_namespaces"] = st.session_state["directory_data"]["checked"]
+    try:
+        st.session_state["agent"] = create_qa_agent(
+            st.session_state["agent_namespaces"]
+        )
+        build_directory()
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 st.title("🗄️ Remote knowledge base")
@@ -39,8 +54,14 @@ if "namespaces" not in st.session_state and "directory" not in st.session_state:
 if "directory_data" not in st.session_state:
     st.session_state["directory_data"] = {}
 
-if "namespaces_deleted" not in st.session_state:
-    st.session_state["namespaces_deleted"] = False
+# if "namespaces_deleted" not in st.session_state:
+#     st.session_state["namespaces_deleted"] = False
+
+if "agent_namespaces" not in st.session_state:
+    st.session_state["agent_namespaces"] = []
+
+if "agent" not in st.session_state:
+    st.session_state["agent"] = None
 
 st.subheader("Add resources")
 with st.form("pdf_upload2", clear_on_submit=True):
@@ -102,19 +123,25 @@ with st.form("pdf_upload2", clear_on_submit=True):
 st.subheader("Select your resources")
 st.session_state["directory_data"] = tree_select(st.session_state["directory"])
 
+delete_namespaces_col, create_agent_col = st.columns([0.3, 0.7])
 
-modal = Modal("Confirm to Delete Resources", key="ModKey")
+delete_namespaces_modal = Modal("Confirm to Delete Resources", key="delete_namespaces")
+create_agent_modal = Modal("Confirm Resources to create QA Agent", key="create_agent")
 
-disable_modal, resources_to_delete = check_directory()
+disable_modal, selected_resources = check_directory()
 
-open_modal = st.button("Delete Resources", disabled=disable_modal)
-if open_modal:
-    modal.open()
+with delete_namespaces_col:
+    open_delete_namespaces_modal = st.button("Delete Resources", disabled=disable_modal)
+with create_agent_col:
+    open_create_agent_modal = st.button("Create QA Agent", disabled=disable_modal)
 
-if modal.is_open():
-    with modal.container():
-        st.write("*Are you sure you wish to delete the resources selected?*")
-        st.write(resources_to_delete)
+if open_delete_namespaces_modal:
+    delete_namespaces_modal.open()
+
+if delete_namespaces_modal.is_open():
+    with delete_namespaces_modal.container():
+        st.write("*Are you sure you wish to delete the selected resources?*")
+        st.write(selected_resources)
 
         col1, col2 = st.columns([0.3, 0.7])
         with col1:
@@ -122,11 +149,50 @@ if modal.is_open():
                 if delete_resources() == True:
                     st.success("Resources successfully deleted!")
                     time.sleep(2)
-                    modal.close()
+                    delete_namespaces_modal.close()
                 else:
                     st.error("Error: Unable to delete resources.")
 
         with col2:
             if st.button("No"):
-                modal.close()
-st.write(st.session_state["directory_data"])
+                delete_namespaces_modal.close()
+
+if open_create_agent_modal:
+    create_agent_modal.open()
+
+if create_agent_modal.is_open():
+    with create_agent_modal.container():
+        st.write(
+            "*Are you sure you wish to create the QA Agent with the resources selected?*"
+        )
+        st.write(selected_resources)
+
+        col1, col2 = st.columns([0.3, 0.7])
+        with col1:
+            if st.button("Yes"):
+                if create_agent() == True:
+                    st.success("QA Agent created!")
+                    time.sleep(2)
+                    create_agent_modal.close()
+                else:
+                    st.error("Error: Unable to create QA Agent.")
+
+        with col2:
+            if st.button("No"):
+                create_agent_modal.close()
+# st.write(st.session_state["directory_data"])
+# st.write(st.session_state["agent_namespaces"])
+
+with st.sidebar:
+    with st.expander("📚 QA Agent", expanded=True):
+        if st.session_state["agent"] is not None:
+            # st.header("QA Agent")
+            tools_string = ""
+            for index, tool in enumerate(st.session_state["agent"].tools):
+                st.write(f"**Tool name**: {tool.name}")
+                st.write(f"**Tool description**: {tool.description}")
+                if index != len(st.session_state["agent"].tools) - 1:
+                    st.divider()
+
+        else:
+            st.write(None)
