@@ -23,16 +23,17 @@ def delete_resources():
     result = delete_namespaces(st.session_state["directory_data"]["checked"])
 
     if result:
-        build_directory()
-
         # Python List Comprehension - Remove namespaces to delete from existing QA Agent
         updated_agent_namespaces = [
             x
             for x in st.session_state["agent_namespaces"]
             if x not in set(st.session_state["directory_data"]["checked"])
         ]
-
-        create_agent(updated_agent_namespaces)
+        if len(updated_agent_namespaces) > 0:
+            is_agent_updated = create_agent(updated_agent_namespaces)
+            if is_agent_updated:
+                return result
+        build_directory()
     return result
 
 
