@@ -57,7 +57,7 @@ def fetch_system_prompt():
         query = "SELECT * FROM system_prompt;"
         try:
             cur.execute(query)
-            return cur.fetchall()
+            return cur.fetchall()[0][2]
         except Exception as e:
             print("Error=>", e)
             return None
@@ -68,7 +68,7 @@ def upload_prompt(file_content):
     with db_connection.cursor() as cur2:
         sql = "SELECT * FROM insert_update_prompt(%s);"
         try:
-            cur2.execute(sql, (file_content.strip(),))
+            cur2.execute(sql, (file_content,))
             db_connection.commit()
         except Exception as e:
             print("Error:", e)

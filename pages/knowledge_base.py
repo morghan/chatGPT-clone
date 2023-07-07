@@ -7,7 +7,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 
-from connections import fetch_namespaces, delete_namespaces, vector_store
+from main import build_custom_prompt_suffix
+from connections import fetch_namespaces, delete_namespaces
 from langchain_handlers import create_qa_agent
 
 
@@ -19,15 +20,15 @@ def build_directory():
     ]
 
 
-def delete_resources():
-    result = delete_namespaces(st.session_state["directory_data"]["checked"])
+def delete_resources(namespaces_to_delete):
+    result = delete_namespaces(namespaces_to_delete)
 
     if result:
         # Python List Comprehension - Remove namespaces to delete from existing QA Agent
         updated_agent_namespaces = [
             x
             for x in st.session_state["agent_namespaces"]
-            if x not in set(st.session_state["directory_data"]["checked"])
+            if x not in set(namespaces_to_delete)
         ]
         if len(updated_agent_namespaces) > 0:
             is_agent_updated = create_agent(updated_agent_namespaces)
@@ -52,6 +53,7 @@ def create_agent(namespaces):
             st.session_state["agent_namespaces"]
         )
         build_directory()
+        build_custom_prompt_suffix()
         return True
     except Exception as e:
         print(e)
@@ -65,14 +67,25 @@ if "namespaces" not in st.session_state and "directory" not in st.session_state:
 if "directory_data" not in st.session_state:
     st.session_state["directory_data"] = {}
 
-# if "namespaces_deleted" not in st.session_state:
-#     st.session_state["namespaces_deleted"] = False
-
 if "agent_namespaces" not in st.session_state:
     st.session_state["agent_namespaces"] = []
 
 if "agent" not in st.session_state:
     st.session_state["agent"] = None
+
+if (
+    st.session_state["agent"] is not None
+    and "The user can make questions about the following franchises: "
+    not in st.session_state["functions_instructions"]
+):
+    st.session_state[
+        "functions_instructions"
+    ] += f"The user can make questions about the following franchises: {', '.join(st.session_state['agent_namespaces'])}\n"
+    st.session_state["messages"][0] = {
+        "role": "system",
+        "content": st.session_state["functions_instructions"]
+        + st.session_state["custom_prompt"],
+    }
 
 st.subheader("Add resources")
 with st.form("pdf_upload2", clear_on_submit=True):
@@ -160,7 +173,10 @@ if delete_namespaces_modal.is_open():
         col1, col2 = st.columns([0.3, 0.7])
         with col1:
             if st.button("Yes"):
-                if delete_resources() == True:
+                if (
+                    delete_resources(st.session_state["directory_data"]["checked"])
+                    == True
+                ):
                     st.success("Resources deleted and QA Agent updated successfully!")
                     time.sleep(2)
                     delete_namespaces_modal.close()
@@ -200,8 +216,6 @@ if create_agent_modal.is_open():
 with st.sidebar:
     with st.expander("📚 QA Agent", expanded=True):
         if st.session_state["agent"] is not None:
-            # st.header("QA Agent")
-            tools_string = ""
             for index, tool in enumerate(st.session_state["agent"].tools):
                 st.write(f"**Tool name**: {tool.name}")
                 st.write(f"**Tool description**: {tool.description}")
@@ -210,3 +224,5 @@ with st.sidebar:
 
         else:
             st.write(None)
+
+st.session_state["current_page"] = "knowledge_base"

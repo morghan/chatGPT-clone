@@ -18,6 +18,7 @@ google-search-results = "*"
 streamlit-tree-select = "*"
 streamlit-modal = "*"
 termcolor = "*"
+watchdog = "*"
 
 [dev-packages]
 

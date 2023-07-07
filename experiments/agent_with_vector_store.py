@@ -11,7 +11,7 @@ from langchain.callbacks import get_openai_callback
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 from langchain.memory import ConversationBufferMemory
-from conversation_chain import chatgpt_chain
+
 
 namespaces = {
     "cookie_cutters": "Cookie Cutters",
@@ -22,8 +22,7 @@ pinecone.init(
     api_key=st.secrets["pinecone"]["api_key"],
     environment=st.secrets["pinecone"]["env"],
 )
-llm = OpenAI(model="text-davinci-003", temperature=0)
-chat = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0)
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 
@@ -85,12 +84,6 @@ qa_chains = get_qa_chains()
 
 
 tools = [
-    # Tool(
-    #     name="Conversation bot",
-    #     func=chatgpt_chain.run,
-    #     description="Useful for when the user needs to have or follow a conversation. Input can be a fully formed question or any kind of sentence. Return the output directly to the user.",
-    #     return_direct=True,
-    # ),
     Tool(
         name="Cookie Cutters QA System",
         func=qa_chains[0].run,
