@@ -61,7 +61,6 @@ if "current_page" not in st.session_state:
 
 def main():
     with st.sidebar:
-        st.write(st.session_state["messages"])
         # System Message upload
         with st.form("system_prompt", clear_on_submit=True):
             uploaded_file = st.file_uploader(
