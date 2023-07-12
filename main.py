@@ -3,6 +3,8 @@ import streamlit as st
 from conversation_handlers import chat_completion_request, execute_function_call
 from connections import fetch_system_prompt, upload_prompt
 from streamlit_handlers import init, display_chat_history, submit
+from langchain.callbacks import StreamlitCallbackHandler
+import numpy as np
 
 
 def build_custom_prompt_suffix():
@@ -89,37 +91,98 @@ def main():
         st.success("Custom prompt uploaded successfully.", icon="📝")
 
     if (
-        st.session_state["something"] != ""
-        and not st.session_state["chat_reset"]
-        and st.session_state["current_page"] == "main"
+        # st.session_state["something"] != "" and
+        not st.session_state["chat_reset"]
+        # and st.session_state["current_page"] == "main"
     ):
-        with st.spinner("Thinking..."):
-            st.session_state["messages"].append(
-                {"role": "user", "content": st.session_state["something"]}
-            )
-            chat_response = chat_completion_request(
-                st.session_state["messages"], functions=st.session_state["functions"]
-            )
-            assistant_message = chat_response.json()["choices"][0]["message"]
-            st.session_state["messages"].append(assistant_message)
-            if assistant_message.get("function_call"):
-                results = execute_function_call(assistant_message)
-                st.session_state["messages"].append(
-                    {
-                        "role": "function",
-                        "name": assistant_message["function_call"]["name"],
-                        "content": results,
-                    }
-                )
+        # New chat elements
+        for message in st.session_state["messages"][1:]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-            st.session_state["chat_history"].append(
-                (
-                    st.session_state["something"],
-                    results
-                    if assistant_message.get("function_call")
-                    else assistant_message["content"],
+        if prompt := st.chat_input("What is up?"):
+            # Display user message in chat message container
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # Add user message to chat history
+            st.session_state["messages"].append({"role": "user", "content": prompt})
+
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                m = {"function_call": {"name": None, "arguments": ""}}
+                full_response = ""
+                # st.bar_chart(np.random.randn(30, 3))
+                for chat_response in chat_completion_request(
+                    messages=st.session_state["messages"],
+                    functions=st.session_state["functions"],
+                ):
+                    delta = chat_response["choices"][0]["delta"]
+                    # st.write(chat_response)
+                    if "function_call" in delta:
+                        if "name" in delta["function_call"]:
+                            m["function_call"]["name"] = delta["function_call"]["name"]
+                        if "arguments" in delta["function_call"]:
+                            m["function_call"]["arguments"] += delta["function_call"][
+                                "arguments"
+                            ]
+                    if chat_response["choices"][0]["finish_reason"] == "function_call":
+                        # st.write(m)
+                        st_callback = StreamlitCallbackHandler(st.container())
+                        results = execute_function_call(m, st_callback)
+                        st.write(results)
+                        st.session_state["messages"].append(
+                            {
+                                "role": "function",
+                                "name": m["function_call"]["name"],
+                                "content": results,
+                            }
+                        )
+                    if "content" in delta and "function_call" not in delta:
+                        full_response += delta.get("content", "")
+                        message_placeholder.markdown(full_response + "▌")
+                message_placeholder.markdown(full_response)
+                st.session_state["messages"].append(
+                    {"role": "assistant", "content": full_response}
                 )
+                #     else:
+                #         full_response += delta.get("content", "")
+                #         message_placeholder.markdown(full_response + "▌")
+                # # To eliminate the ▌ character at the end
+                # message_placeholder.markdown(full_response)
+
+            st.session_state["messages"].append(
+                {"role": "assistant", "content": full_response}
             )
+
+        # Current chat component
+        # with st.spinner("Thinking..."):
+        #     st.session_state["messages"].append(
+        #         {"role": "user", "content": st.session_state["something"]}
+        #     )
+        #     chat_response = chat_completion_request(
+        #         st.session_state["messages"], functions=st.session_state["functions"]
+        #     )
+        #     assistant_message = chat_response.json()["choices"][0]["message"]
+        #     st.session_state["messages"].append(assistant_message)
+        #     if assistant_message.get("function_call"):
+        #         results = execute_function_call(assistant_message)
+        #         st.session_state["messages"].append(
+        #             {
+        #                 "role": "function",
+        #                 "name": assistant_message["function_call"]["name"],
+        #                 "content": results,
+        #             }
+        #         )
+
+        #     st.session_state["chat_history"].append(
+        #         (
+        #             st.session_state["something"],
+        #             results
+        #             if assistant_message.get("function_call")
+        #             else assistant_message["content"],
+        #         )
+        #     )
 
     display_chat_history()
     st.session_state["current_page"] = "main"
