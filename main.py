@@ -5,6 +5,7 @@ from connections import fetch_system_prompt, upload_prompt
 from streamlit_handlers import init, display_chat_history, submit
 from langchain.callbacks import StreamlitCallbackHandler
 import numpy as np
+import time
 
 
 def build_custom_prompt_suffix():
@@ -39,8 +40,8 @@ if "functions" not in st.session_state:
         },
     ]
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = [
         {
             "role": "system",
             "content": st.session_state["functions_instructions"]
@@ -48,17 +49,16 @@ if "messages" not in st.session_state:
         }
     ]
 
-if "something" not in st.session_state:
-    st.session_state["something"] = ""
-
-if "chat_history" not in st.session_state:
-    st.session_state["chat_history"] = []
 
 if "chat_reset" not in st.session_state:
     st.session_state["chat_reset"] = False
 
 if "current_page" not in st.session_state:
     st.session_state["current_page"] = "main"
+
+st_callback = StreamlitCallbackHandler(
+    st.container(),
+)
 
 
 def main():
@@ -85,107 +85,86 @@ def main():
                     if "chat_history" in st.session_state:
                         del st.session_state["chat_history"]
 
-        st.text_input("Your input", key="user_input", on_change=submit)
+        # st.text_input("Your input", key="user_input", on_change=submit)
 
     if uploaded_file is not None:
         st.success("Custom prompt uploaded successfully.", icon="📝")
 
-    if (
-        # st.session_state["something"] != "" and
-        not st.session_state["chat_reset"]
-        # and st.session_state["current_page"] == "main"
-    ):
-        # New chat elements
-        for message in st.session_state["messages"][1:]:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    if not st.session_state["chat_reset"]:
+        # Render conversation
+        for message in st.session_state["chat_history"][1:]:
+            if message["content"] is not None:
+                with st.chat_message(
+                    name=message["role"],
+                    avatar="🤖" if message["role"] == "function" else None,
+                ):
+                    st.markdown(message["content"])
 
-        if prompt := st.chat_input("What is up?"):
+        # Check for user input
+        if prompt := st.chat_input("Let's begin the game!"):
             # Display user message in chat message container
             with st.chat_message("user"):
                 st.markdown(prompt)
 
             # Add user message to chat history
-            st.session_state["messages"].append({"role": "user", "content": prompt})
+            st.session_state["chat_history"].append({"role": "user", "content": prompt})
 
             with st.chat_message("assistant"):
+                # Placeholders
                 message_placeholder = st.empty()
-                m = {"function_call": {"name": None, "arguments": ""}}
+                function_message = {
+                    "content": None,
+                    "function_call": {"name": None, "arguments": ""},
+                }
                 full_response = ""
-                # st.bar_chart(np.random.randn(30, 3))
+                # Stream chat completion
                 for chat_response in chat_completion_request(
-                    messages=st.session_state["messages"],
+                    messages=st.session_state["chat_history"],
                     functions=st.session_state["functions"],
                 ):
                     delta = chat_response["choices"][0]["delta"]
-                    # st.write(chat_response)
+
+                    # Checks if LLM needs to call a function to respond
                     if "function_call" in delta:
                         if "name" in delta["function_call"]:
-                            m["function_call"]["name"] = delta["function_call"]["name"]
+                            function_message["function_call"]["name"] = delta[
+                                "function_call"
+                            ]["name"]
+                            function_message["content"] = delta["content"]
                         if "arguments" in delta["function_call"]:
-                            m["function_call"]["arguments"] += delta["function_call"][
-                                "arguments"
-                            ]
+                            function_message["function_call"]["arguments"] += delta[
+                                "function_call"
+                            ]["arguments"]
                     if chat_response["choices"][0]["finish_reason"] == "function_call":
-                        # st.write(m)
-                        st_callback = StreamlitCallbackHandler(st.container())
-                        results = execute_function_call(m, st_callback)
+                        st.session_state["chat_history"].append(
+                            {
+                                "role": "assistant",
+                                "content": function_message["content"],
+                                "function_call": function_message["function_call"],
+                            }
+                        )
+
+                        results = execute_function_call(function_message, st_callback)
+                        time.sleep(0.07)
                         st.write(results)
-                        st.session_state["messages"].append(
+                        st.session_state["chat_history"].append(
                             {
                                 "role": "function",
-                                "name": m["function_call"]["name"],
+                                "name": function_message["function_call"]["name"],
                                 "content": results,
                             }
                         )
+                    # Checks if LLM is responding by itself
                     if "content" in delta and "function_call" not in delta:
                         full_response += delta.get("content", "")
+                        time.sleep(0.07)
                         message_placeholder.markdown(full_response + "▌")
-                message_placeholder.markdown(full_response)
-                st.session_state["messages"].append(
-                    {"role": "assistant", "content": full_response}
-                )
-                #     else:
-                #         full_response += delta.get("content", "")
-                #         message_placeholder.markdown(full_response + "▌")
-                # # To eliminate the ▌ character at the end
-                # message_placeholder.markdown(full_response)
-
-            st.session_state["messages"].append(
-                {"role": "assistant", "content": full_response}
-            )
-
-        # Current chat component
-        # with st.spinner("Thinking..."):
-        #     st.session_state["messages"].append(
-        #         {"role": "user", "content": st.session_state["something"]}
-        #     )
-        #     chat_response = chat_completion_request(
-        #         st.session_state["messages"], functions=st.session_state["functions"]
-        #     )
-        #     assistant_message = chat_response.json()["choices"][0]["message"]
-        #     st.session_state["messages"].append(assistant_message)
-        #     if assistant_message.get("function_call"):
-        #         results = execute_function_call(assistant_message)
-        #         st.session_state["messages"].append(
-        #             {
-        #                 "role": "function",
-        #                 "name": assistant_message["function_call"]["name"],
-        #                 "content": results,
-        #             }
-        #         )
-
-        #     st.session_state["chat_history"].append(
-        #         (
-        #             st.session_state["something"],
-        #             results
-        #             if assistant_message.get("function_call")
-        #             else assistant_message["content"],
-        #         )
-        #     )
-
-    display_chat_history()
-    st.session_state["current_page"] = "main"
+                    if chat_response["choices"][0]["finish_reason"] == "stop":
+                        message_placeholder.markdown(full_response)
+                        st.session_state["chat_history"].append(
+                            {"role": "assistant", "content": full_response}
+                        )
+    # st.session_state["current_page"] = "main"
 
 
 if __name__ == "__main__":

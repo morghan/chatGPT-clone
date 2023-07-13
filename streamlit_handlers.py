@@ -11,10 +11,11 @@ def init():
         print("OPENAI_API_KEY not found")
         exit(1)
     else:
+        
         print("OPENAI_API_KEY found")
-        st.header("ChatGPT-driven assessment 📄")
+        st.header("👨‍💻QUALIFYI - AI Broker")
         st.subheader(
-            " ⬅️ You can freely chat with the AI assistant by typing in the box to the left . You can also upload (txt file) a system prompt for the assistant."
+            "You can freely chat with the AI Broker. You can also upload (txt file) a system prompt for the broker to follow."
         )
 
 
