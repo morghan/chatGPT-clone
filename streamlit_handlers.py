@@ -22,7 +22,7 @@ def render_conversation():
         if message["content"] is not None:
             with st.chat_message(
                 name=message["role"],
-                avatar="https://github.com/morghan/chatGPT-clone/blob/main/icons/database.png" if message["role"] == "function" else None,
+                avatar="https://raw.githubusercontent.com/morghan/chatGPT-clone/main/icons/database.png" if message["role"] == "function" else None,
             ):
                 st.markdown(message["content"])
 
