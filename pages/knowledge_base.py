@@ -10,6 +10,7 @@ from langchain.vectorstores import Pinecone
 from main import build_custom_prompt_suffix
 from connections import fetch_namespaces, delete_namespaces
 from langchain_handlers import create_qa_agent
+from streamlit_handlers import render_qa_agent
 
 
 def build_directory():
@@ -81,7 +82,7 @@ if (
     st.session_state[
         "functions_instructions"
     ] += f"The user can make questions about the following franchises: {', '.join(st.session_state['agent_namespaces'])}\n"
-    st.session_state["messages"][0] = {
+    st.session_state["chat_history"][0] = {
         "role": "system",
         "content": st.session_state["functions_instructions"]
         + st.session_state["custom_prompt"],
@@ -178,7 +179,7 @@ if delete_namespaces_modal.is_open():
                     == True
                 ):
                     st.success("Resources deleted and QA Agent updated successfully!")
-                    time.sleep(2)
+                    time.sleep(1)
                     delete_namespaces_modal.close()
                 else:
                     st.error("Error: Unable to delete resources.")
@@ -202,7 +203,7 @@ if create_agent_modal.is_open():
             if st.button("Yes"):
                 if create_agent(st.session_state["directory_data"]["checked"]) == True:
                     st.success("QA Agent created!")
-                    time.sleep(2)
+                    time.sleep(1)
                     create_agent_modal.close()
                 else:
                     st.error("Error: Unable to create QA Agent.")
@@ -214,15 +215,6 @@ if create_agent_modal.is_open():
 # st.write(st.session_state["agent_namespaces"])
 
 with st.sidebar:
-    with st.expander("📚 QA Agent", expanded=True):
-        if st.session_state["agent"] is not None:
-            for index, tool in enumerate(st.session_state["agent"].tools):
-                st.write(f"**Tool name**: {tool.name}")
-                st.write(f"**Tool description**: {tool.description}")
-                if index != len(st.session_state["agent"].tools) - 1:
-                    st.divider()
-
-        else:
-            st.write(None)
+    render_qa_agent()
 
 st.session_state["current_page"] = "knowledge_base"

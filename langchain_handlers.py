@@ -4,7 +4,6 @@ from langchain.vectorstores import Pinecone
 from langchain.chains import RetrievalQA
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 import streamlit as st
 import pinecone
@@ -18,7 +17,6 @@ chat = ChatOpenAI(
     model="gpt-3.5-turbo-16k",
     temperature=0,
     streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
 )
 
 
